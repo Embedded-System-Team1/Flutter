@@ -37,22 +37,24 @@ class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
       devicesList.clear();
     });
 
-    FlutterBluePlus.startScan(timeout: Duration(seconds: 4));
-    scanSubscription = FlutterBluePlus.scanResults.listen((results) {
+    print("Starting Bluetooth scan...");
+    FlutterBluePlus.startScan(timeout: Duration(seconds: 4)).then((_) {
+      print("Bluetooth scan complete");
+      setState(() {
+        isScanning = false;
+      });
+    });
+
+    FlutterBluePlus.scanResults.listen((results) {
+      print("Scan results: ${results.length} devices found");
       for (ScanResult result in results) {
+        print('Device: ${result.device.name}, ID: ${result.device.id}');
         if (!devicesList.any((device) => device.id == result.device.id)) {
           setState(() {
             devicesList.add(result.device);
           });
         }
       }
-    });
-
-    // 스캔 완료 후 상태 업데이트
-    FlutterBluePlus.stopScan().then((_) {
-      setState(() {
-        isScanning = false;
-      });
     });
   }
 
