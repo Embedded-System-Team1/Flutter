@@ -22,7 +22,7 @@ class BluetoothSerialExample extends StatefulWidget {
 }
 
 class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
-  final List<ScanResult> devicesList = [];
+  final Map<String, ScanResult> devicesMap = {};
   BluetoothDevice? connectedDevice;
   List<BluetoothService>? bluetoothServices;
   StreamSubscription? scanSubscription;
@@ -34,7 +34,7 @@ class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
 
     setState(() {
       isScanning = true;
-      devicesList.clear();
+      devicesMap.clear();
     });
 
     print("Starting Bluetooth scan...");
@@ -50,10 +50,9 @@ class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
     scanSubscription = FlutterBluePlus.scanResults.listen((results) {
       print("Scan results: ${results.length} devices found");
       for (ScanResult result in results) {
-        print('Device: ${result.device.name}, ID: ${result.device.id}');
-        if (!devicesList.any((item) => item.device.id == result.device.id)) {
+        if (!devicesMap.containsKey(result.device.id.toString())) {
           setState(() {
-            devicesList.add(result);
+            devicesMap[result.device.id.toString()] = result;
           });
         }
       }
@@ -129,9 +128,9 @@ class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
       ),
       body: connectedDevice == null
           ? ListView.builder(
-        itemCount: devicesList.length,
+        itemCount: devicesMap.length,
         itemBuilder: (context, index) {
-          final result = devicesList[index];
+          final result = devicesMap.values.toList()[index];
           return ListTile(
             title: Text(
               result.device.name.isEmpty
