@@ -22,7 +22,7 @@ class BluetoothSerialExample extends StatefulWidget {
 }
 
 class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
-  final List<BluetoothDevice> devicesList = [];
+  final List<ScanResult> devicesList = [];
   BluetoothDevice? connectedDevice;
   List<BluetoothService>? bluetoothServices;
   StreamSubscription? scanSubscription;
@@ -45,13 +45,15 @@ class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
       });
     });
 
-    FlutterBluePlus.scanResults.listen((results) {
+    // 기존 리스너가 있으면 해제
+    scanSubscription?.cancel();
+    scanSubscription = FlutterBluePlus.scanResults.listen((results) {
       print("Scan results: ${results.length} devices found");
       for (ScanResult result in results) {
         print('Device: ${result.device.name}, ID: ${result.device.id}');
-        if (!devicesList.any((device) => device.id == result.device.id)) {
+        if (!devicesList.any((item) => item.device.id == result.device.id)) {
           setState(() {
-            devicesList.add(result.device);
+            devicesList.add(result);
           });
         }
       }
@@ -113,9 +115,15 @@ class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
         actions: [
           IconButton(
             icon: isScanning
-                ? CircularProgressIndicator(color: Colors.white)
+                ? Stack(
+              alignment: Alignment.center,
+              children: [
+                Icon(Icons.search, color: Colors.white.withOpacity(0.5)),
+                CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              ],
+            )
                 : Icon(Icons.search),
-            onPressed: scanForDevices,
+            onPressed: isScanning ? null : scanForDevices,
           ),
         ],
       ),
@@ -123,18 +131,23 @@ class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
           ? ListView.builder(
         itemCount: devicesList.length,
         itemBuilder: (context, index) {
+          final result = devicesList[index];
           return ListTile(
-            title: Text(devicesList[index].name.isEmpty
-                ? 'Unknown Device'
-                : devicesList[index].name),
-            subtitle: Text(devicesList[index].id.toString()),
-            onTap: () => connectToDevice(devicesList[index]),
+            title: Text(
+              result.device.name.isEmpty
+                  ? 'Unknown Device (${result.device.id})'
+                  : result.device.name,
+            ),
+            subtitle: Text('ID: ${result.device.id}\nRSSI: ${result.rssi}'),
+            onTap: () => connectToDevice(result.device),
           );
         },
       )
           : Column(
         children: [
-          Text('Connected to: ${connectedDevice!.name.isEmpty ? 'Unknown Device' : connectedDevice!.name}'),
+          Text(
+            'Connected to: ${connectedDevice!.name.isEmpty ? 'Unknown Device' : connectedDevice!.name}',
+          ),
           ElevatedButton(
             onPressed: disconnectFromDevice,
             child: Text('Disconnect'),
