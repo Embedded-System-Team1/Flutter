@@ -34,21 +34,14 @@ class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
 
     setState(() {
       isScanning = true;
-      devicesMap.clear();
     });
 
     print("Starting Bluetooth scan...");
-    FlutterBluePlus.startScan(timeout: Duration(seconds: 4)).then((_) {
-      print("Bluetooth scan complete");
-      setState(() {
-        isScanning = false;
-      });
-    });
+    FlutterBluePlus.startScan(); // timeout 제거
 
     // 기존 리스너가 있으면 해제
     scanSubscription?.cancel();
     scanSubscription = FlutterBluePlus.scanResults.listen((results) {
-      print("Scan results: ${results.length} devices found");
       for (ScanResult result in results) {
         if (!devicesMap.containsKey(result.device.id.toString())) {
           setState(() {
@@ -57,6 +50,18 @@ class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
         }
       }
     });
+  }
+
+  void stopScanning() {
+    if (!isScanning) return;
+
+    setState(() {
+      isScanning = false;
+    });
+
+    print("Stopping Bluetooth scan...");
+    FlutterBluePlus.stopScan();
+    scanSubscription?.cancel();
   }
 
   Future<void> connectToDevice(BluetoothDevice device) async {
@@ -114,15 +119,9 @@ class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
         actions: [
           IconButton(
             icon: isScanning
-                ? Stack(
-              alignment: Alignment.center,
-              children: [
-                Icon(Icons.search, color: Colors.white.withOpacity(0.5)),
-                CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-              ],
-            )
-                : Icon(Icons.search),
-            onPressed: isScanning ? null : scanForDevices,
+                ? Icon(Icons.stop, color: Colors.red) // 스캔 중단 버튼
+                : Icon(Icons.search),               // 스캔 시작 버튼
+            onPressed: isScanning ? stopScanning : scanForDevices,
           ),
         ],
       ),
