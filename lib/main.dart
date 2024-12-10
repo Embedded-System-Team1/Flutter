@@ -39,14 +39,18 @@ class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
     print("Starting Bluetooth scan...");
     FlutterBluePlus.startScan(); // timeout 제거
 
-    // 기존 리스너가 있으면 해제
     scanSubscription?.cancel();
     scanSubscription = FlutterBluePlus.scanResults.listen((results) {
       for (ScanResult result in results) {
-        if (!devicesMap.containsKey(result.device.id.toString())) {
+        // MAC 주소로 중복 확인 후 추가
+        final deviceId = result.device.id.toString();
+        if (!devicesMap.containsKey(deviceId)) {
           setState(() {
-            devicesMap[result.device.id.toString()] = result;
+            devicesMap[deviceId] = result;
           });
+          print("Device added: ${result.device.name}, ID: $deviceId");
+        } else {
+          print("Duplicate device ignored: ${result.device.name}, ID: $deviceId");
         }
       }
     });
