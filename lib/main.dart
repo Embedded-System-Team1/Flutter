@@ -127,16 +127,15 @@ class _BluetoothSerialExampleState extends State<BluetoothSerialExample> {
         ],
       ),
       body: connectedDevice == null
-          ? ListView.builder(
-        itemCount: devicesMap.length,
+          ?ListView.builder(
+        itemCount: devicesMap.values.where((result) => result.device.name.isNotEmpty).length,
         itemBuilder: (context, index) {
-          final result = devicesMap.values.toList()[index];
+          // 이름이 있는 장치만 필터링
+          final result = devicesMap.values
+              .where((result) => result.device.name.isNotEmpty)
+              .toList()[index];
           return ListTile(
-            title: Text(
-              result.device.name.isEmpty
-                  ? 'Unknown Device (${result.device.id})'
-                  : result.device.name,
-            ),
+            title: Text(result.device.name),
             subtitle: Text('ID: ${result.device.id}\nRSSI: ${result.rssi}'),
             onTap: () => connectToDevice(result.device),
           );
