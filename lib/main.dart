@@ -9,7 +9,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: BluetoothSerialExample(),
+      title: 'Bluetooth Classic Example',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: BluetoothClassicExample(), // 제공된 BluetoothClassicExample 위젯 사용
     );
   }
 }
