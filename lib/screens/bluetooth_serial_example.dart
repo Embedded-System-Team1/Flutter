@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'dart:convert'; // for utf8 encoding/decoding
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
@@ -12,19 +12,21 @@ class BluetoothClassicExample extends StatefulWidget {
 class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
   List<BluetoothDiscoveryResult> devices = [];
   StreamSubscription<BluetoothDiscoveryResult>? discoveryStream;
+  BluetoothConnection? connection; // Bluetooth connection instance
   bool isDiscovering = false;
+  bool isConnected = false;
 
   void startDiscovery() {
     setState(() {
       isDiscovering = true;
-      devices.clear(); // 이전 검색 결과 초기화
+      devices.clear(); // Clear previous results
     });
 
     discoveryStream = FlutterBluetoothSerial.instance.startDiscovery().listen((result) {
-      // 이름이 있는 장치만 추가
+      // Add only devices with a name
       if (result.device.name != null && result.device.name!.isNotEmpty) {
         setState(() {
-          // 중복된 장치 추가 방지
+          // Avoid duplicate devices
           if (!devices.any((existingDevice) =>
           existingDevice.device.address == result.device.address)) {
             devices.add(result);
@@ -32,9 +34,9 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
         });
       }
     }, onDone: () {
-      // 검색 완료 시, 재시작하도록 처리
+      // Restart discovery if still discovering
       if (isDiscovering) {
-        startDiscovery(); // 검색을 계속 반복
+        startDiscovery();
       }
     });
   }
@@ -46,9 +48,56 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
     });
   }
 
+  Future<void> connectToDevice(BluetoothDevice device) async {
+    try {
+      print("Connecting to ${device.name}...");
+      connection = await BluetoothConnection.toAddress(device.address);
+      setState(() {
+        isConnected = true;
+      });
+      print("Connected to ${device.name}");
+
+      // Listen for incoming data
+      connection?.input?.listen((data) {
+        print('Received: ${utf8.decode(data)}'); // Decode incoming bytes
+      }).onDone(() {
+        print('Disconnected by remote');
+        setState(() {
+          isConnected = false;
+          connection = null;
+        });
+      });
+    } catch (e) {
+      print("Error connecting to ${device.name}: $e");
+    }
+  }
+
+  void disconnectFromDevice() {
+    if (connection != null) {
+      connection?.close();
+      setState(() {
+        isConnected = false;
+        connection = null;
+      });
+      print("Disconnected");
+    }
+  }
+
+  void sendData(String data) {
+    if (connection != null && connection!.isConnected) {
+      connection?.output.add(utf8.encode(data)); // Send data as UTF-8 encoded bytes
+      connection?.output.allSent.then((_) {
+        print("Sent: $data");
+      });
+    } else {
+      print("No active connection to send data");
+    }
+  }
+
   @override
   void dispose() {
     discoveryStream?.cancel();
+    connection?.close();
     super.dispose();
   }
 
@@ -62,26 +111,46 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
             icon: Icon(isDiscovering ? Icons.stop : Icons.search),
             onPressed: isDiscovering ? stopDiscovery : startDiscovery,
           ),
+          if (isConnected)
+            IconButton(
+              icon: Icon(Icons.close),
+              onPressed: disconnectFromDevice,
+            ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: devices.length,
-        itemBuilder: (context, index) {
-          final device = devices[index].device;
-          return ListTile(
-            title: Text(device.name ?? "Unknown Device"),
-            subtitle: Text(device.address),
-            onTap: () async {
-              try {
-                final connection =
-                await FlutterBluetoothSerial.instance.connect(device);
-                print("Connected to ${device.name}");
-              } catch (e) {
-                print("Error connecting to ${device.name}: $e");
-              }
-            },
-          );
-        },
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: devices.length,
+              itemBuilder: (context, index) {
+                final device = devices[index].device;
+                return ListTile(
+                  title: Text(device.name ?? "Unknown Device"),
+                  subtitle: Text(device.address),
+                  onTap: () => connectToDevice(device),
+                );
+              },
+            ),
+          ),
+          if (isConnected)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  TextField(
+                    onSubmitted: sendData, // Send data on submit
+                    decoration: InputDecoration(
+                      labelText: "Enter data to send",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text("Connected. You can send data."),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
