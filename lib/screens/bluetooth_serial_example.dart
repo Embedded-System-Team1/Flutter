@@ -113,10 +113,10 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFF333333),
+        backgroundColor: Color(0xFF1D2330),
         title: Text(
-          'RC 조종기',
-          style: TextStyle(fontSize: 18, color: Colors.white),
+          'RC카 컨트롤러',
+          style: TextStyle(fontSize: 18, color: Color(0xFF52B47A)),
         ),
         centerTitle: true,
         actions: [
