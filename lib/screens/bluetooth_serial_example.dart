@@ -94,6 +94,14 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
     }
   }
 
+  void handleButtonPress(String command) {
+    sendData("$command\n");
+  }
+
+  void handleButtonRelease() {
+    sendData("STOP\n");
+  }
+
   @override
   void dispose() {
     discoveryStream?.cancel();
@@ -105,52 +113,157 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Bluetooth Classic Example'),
+        backgroundColor: Color(0xFF333333),
+        title: Text(
+          'RC 조종기',
+          style: TextStyle(fontSize: 18, color: Colors.white),
+        ),
+        centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(isDiscovering ? Icons.stop : Icons.search),
             onPressed: isDiscovering ? stopDiscovery : startDiscovery,
+            color: Colors.white,
           ),
           if (isConnected)
             IconButton(
               icon: Icon(Icons.close),
+              color: Colors.white,
               onPressed: disconnectFromDevice,
             ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: devices.length,
-              itemBuilder: (context, index) {
-                final device = devices[index].device;
-                return ListTile(
-                  title: Text(device.name ?? "Unknown Device"),
-                  subtitle: Text(device.address),
-                  onTap: () => connectToDevice(device),
-                );
-              },
-            ),
-          ),
-          if (isConnected)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  TextField(
-                    onSubmitted: sendData, // Send data on submit
-                    decoration: InputDecoration(
-                      labelText: "Enter data to send",
-                      border: OutlineInputBorder(),
+      body: Container(
+        color: Color(0xFF1D2330), // Set background color
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: devices.length,
+                itemBuilder: (context, index) {
+                  final device = devices[index].device;
+                  return ListTile(
+                    title: Text(
+                      device.name ?? "Unknown Device",
+                      style: TextStyle(color: Colors.white),
                     ),
-                  ),
-                  SizedBox(height: 8),
-                  Text("Connected. You can send data."),
-                ],
+                    subtitle: Text(
+                      device.address,
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    onTap: () => connectToDevice(device),
+                  );
+                },
               ),
             ),
-        ],
+            if (isConnected)
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  children: [
+                    Text(
+                      "버튼을 눌러 자동차를 조종해보세요!",
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                    SizedBox(height: 16),
+                    // Directional Buttons
+                    Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            GestureDetector(
+                              onTapDown: (_) => handleButtonPress("UP"),
+                              onTapUp: (_) => handleButtonRelease(),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF2E3646), // Set button color
+                                  borderRadius: BorderRadius.circular(8), // Rounded corners
+                                ),
+                                child: Text(
+                                  "↑",
+                                  style: TextStyle(
+                                    color: Color(0xFF9DA6B6), // Text color
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // LEFT 버튼
+                            GestureDetector(
+                              onTapDown: (_) => handleButtonPress("LEFT"),
+                              onTapUp: (_) => handleButtonRelease(),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF2E3646), // Set button color
+                                  borderRadius: BorderRadius.circular(8), // Rounded corners
+                                ),
+                                child: Text(
+                                  "←",
+                                  style: TextStyle(
+                                    color: Color(0xFF9DA6B6), // Text color
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            // DOWN 버튼
+                            GestureDetector(
+                              onTapDown: (_) => handleButtonPress("DOWN"),
+                              onTapUp: (_) => handleButtonRelease(),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF2E3646), // Set button color
+                                  borderRadius: BorderRadius.circular(8), // Rounded corners
+                                ),
+                                child: Text(
+                                  "↓",
+                                  style: TextStyle(
+                                    color: Color(0xFF9DA6B6), // Text color
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 10),
+                            // RIGHT 버튼
+                            GestureDetector(
+                              onTapDown: (_) => handleButtonPress("RIGHT"),
+                              onTapUp: (_) => handleButtonRelease(),
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF2E3646), // Set button color
+                                  borderRadius: BorderRadius.circular(8), // Rounded corners
+                                ),
+                                child: Text(
+                                  "→",
+                                  style: TextStyle(
+                                    color: Color(0xFF9DA6B6), // Text color
+                                    fontSize: 18,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
