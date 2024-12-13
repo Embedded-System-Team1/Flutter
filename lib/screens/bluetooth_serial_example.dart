@@ -94,12 +94,50 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
     }
   }
 
-  void handleButtonPress(String command) {
-    sendData("$command\n");
+  void sendJsonData(int id, int speed, int directionX, int directionY) {
+    if (connection != null && connection!.isConnected) {
+      final jsonData = jsonEncode({
+        "id": id,
+        "speed": speed,
+        "directionX": directionX,
+        "directionY": directionY,
+      });
+
+      connection?.output.add(utf8.encode("$jsonData\n")); // Send JSON as UTF-8 encoded bytes
+      connection?.output.allSent.then((_) {
+        print("Sent: $jsonData");
+      });
+    } else {
+      print("No active connection to send data");
+    }
+  }
+
+  void handleButtonPress(String direction) {
+    int directionX = 0;
+    int directionY = 0;
+
+    switch (direction) {
+      case "UP":
+        directionY = 1; // Forward
+        break;
+      case "DOWN":
+        directionY = -1; // Backward
+        break;
+      case "LEFT":
+        directionX = -1; // Left
+        break;
+      case "RIGHT":
+        directionX = 1; // Right
+        break;
+      default:
+        directionX = 0;
+        directionY = 0; // STOP or undefined
+    }
+    sendJsonData(0, 50, directionX, directionY); // Example id=0, speed=50
   }
 
   void handleButtonRelease() {
-    sendData("STOP\n");
+    sendJsonData(0, 0, 0, 0); // Stop command
   }
 
   @override
