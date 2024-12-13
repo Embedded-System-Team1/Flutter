@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:convert'; // for utf8 encoding/decoding
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 
@@ -15,11 +15,13 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
   BluetoothConnection? connection; // Bluetooth connection instance
   bool isDiscovering = false;
   bool isConnected = false;
+  int currentSpeed = 0; // 현재 속도
+  Timer? speedTimer; // Timer for speed increase
 
   void startDiscovery() {
     setState(() {
       isDiscovering = true;
-      devices.clear(); // Clear previous results
+      devices.clear();
     });
 
     discoveryStream = FlutterBluetoothSerial.instance.startDiscovery().listen((result) {
@@ -133,11 +135,25 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
         directionX = 0;
         directionY = 0; // STOP or undefined
     }
-    sendJsonData(0, 50, directionX, directionY); // Example id=0, speed=50
+
+    // Reset speed and start increasing
+    currentSpeed = 10; // Initial speed
+    speedTimer?.cancel(); // Cancel any existing timer
+    speedTimer = Timer.periodic(Duration(milliseconds: 100), (timer) {
+      if (currentSpeed < 100) {
+        currentSpeed += 10; // Increment speed
+        if (currentSpeed > 100) {
+          currentSpeed = 100; // Cap at 100
+        }
+        sendJsonData(0, currentSpeed, directionX, directionY);
+      }
+    });
   }
 
   void handleButtonRelease() {
-    sendJsonData(0, 0, 0, 0); // Stop command
+    speedTimer?.cancel(); // Stop increasing speed
+    currentSpeed = 0; // Reset speed
+    sendJsonData(0, 0, 0, 0); // Send STOP command
   }
 
   @override
