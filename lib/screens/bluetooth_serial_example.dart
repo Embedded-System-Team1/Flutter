@@ -114,6 +114,22 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
     }
   }
 
+  void sendHornCommand(int hornState) {
+    if (connection != null && connection!.isConnected) {
+      final jsonData = jsonEncode({
+        "id": 1, // ID for horn command
+        "hornState": hornState, // 1: ON, 0: OFF
+      });
+
+      connection?.output.add(utf8.encode("$jsonData\n")); // Send JSON as UTF-8 encoded bytes
+      connection?.output.allSent.then((_) {
+        print("Sent Horn Command: $jsonData");
+      });
+    } else {
+      print("No active connection to send data");
+    }
+  }
+
   void handleButtonPress(String direction) {
     int directionX = 0;
     int directionY = 0;
@@ -305,6 +321,36 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
                                   style: TextStyle(
                                     color: Color(0xFF9DA6B6), // Text color
                                     fontSize: 18,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 10),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            GestureDetector(
+                              onTapDown: (_) {
+                                // 버튼을 누를 때 hornState가 1인 메시지 전송
+                                sendHornCommand(1); // hornState: 1
+                              },
+                              onTapUp: (_) {
+                                // 버튼을 뗄 때 hornState가 0인 메시지 전송
+                                sendHornCommand(0); // hornState: 0
+                              },
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFF2E3646), // Horn button color
+                                  borderRadius: BorderRadius.circular(8), // Rounded corners
+                                ),
+                                child: Text(
+                                  "Horn",
+                                  style: TextStyle(
+                                    color: Color(0xFF9DA6B6),
+                                    fontSize: 16,
                                   ),
                                 ),
                               ),
