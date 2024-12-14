@@ -17,6 +17,7 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
   bool isConnected = false;
   int currentSpeed = 0; // 현재 속도
   Timer? speedTimer; // Timer for speed increase
+  bool autoLightEnabled = false; // 오토라이트 상태
 
   void startDiscovery() {
     setState(() {
@@ -24,23 +25,24 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
       devices.clear();
     });
 
-    discoveryStream = FlutterBluetoothSerial.instance.startDiscovery().listen((result) {
-      // Add only devices with a name
-      if (result.device.name != null && result.device.name!.isNotEmpty) {
-        setState(() {
-          // Avoid duplicate devices
-          if (!devices.any((existingDevice) =>
-          existingDevice.device.address == result.device.address)) {
-            devices.add(result);
+    discoveryStream =
+        FlutterBluetoothSerial.instance.startDiscovery().listen((result) {
+          // Add only devices with a name
+          if (result.device.name != null && result.device.name!.isNotEmpty) {
+            setState(() {
+              // Avoid duplicate devices
+              if (!devices.any((existingDevice) =>
+              existingDevice.device.address == result.device.address)) {
+                devices.add(result);
+              }
+            });
+          }
+        }, onDone: () {
+          // Restart discovery if still discovering
+          if (isDiscovering) {
+            startDiscovery();
           }
         });
-      }
-    }, onDone: () {
-      // Restart discovery if still discovering
-      if (isDiscovering) {
-        startDiscovery();
-      }
-    });
   }
 
   void stopDiscovery() {
@@ -85,17 +87,6 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
     }
   }
 
-  void sendData(String data) {
-    if (connection != null && connection!.isConnected) {
-      connection?.output.add(utf8.encode(data)); // Send data as UTF-8 encoded bytes
-      connection?.output.allSent.then((_) {
-        print("Sent: $data");
-      });
-    } else {
-      print("No active connection to send data");
-    }
-  }
-
   void sendJsonData(int id, int speed, int directionX, int directionY) {
     if (connection != null && connection!.isConnected) {
       final jsonData = jsonEncode({
@@ -124,6 +115,27 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
       connection?.output.add(utf8.encode("$jsonData\n")); // Send JSON as UTF-8 encoded bytes
       connection?.output.allSent.then((_) {
         print("Sent Horn Command: $jsonData");
+      });
+    } else {
+      print("No active connection to send data");
+    }
+  }
+
+  void toggleAutoLightMode() {
+    setState(() {
+      autoLightEnabled = !autoLightEnabled; // Toggle state
+    });
+
+    int mode = autoLightEnabled ? 1 : 0; // 1: ON, 0: OFF
+    if (connection != null && connection!.isConnected) {
+      final jsonData = jsonEncode({
+        "id": 2, // ID for auto light command
+        "mode": mode, // 1: ON, 0: OFF
+      });
+
+      connection?.output.add(utf8.encode("$jsonData\n")); // Send JSON as UTF-8 encoded bytes
+      connection?.output.allSent.then((_) {
+        print("Sent AutoLight Command: $jsonData");
       });
     } else {
       print("No active connection to send data");
@@ -236,7 +248,6 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
                       style: TextStyle(fontSize: 16, color: Colors.white),
                     ),
                     SizedBox(height: 16),
-                    // Directional Buttons
                     Column(
                       children: [
                         Row(
@@ -266,7 +277,6 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // LEFT 버튼
                             GestureDetector(
                               onTapDown: (_) => handleButtonPress("LEFT"),
                               onTapUp: (_) => handleButtonRelease(),
@@ -286,7 +296,6 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
                               ),
                             ),
                             SizedBox(width: 10),
-                            // DOWN 버튼
                             GestureDetector(
                               onTapDown: (_) => handleButtonPress("DOWN"),
                               onTapUp: (_) => handleButtonRelease(),
@@ -306,7 +315,6 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
                               ),
                             ),
                             SizedBox(width: 10),
-                            // RIGHT 버튼
                             GestureDetector(
                               onTapDown: (_) => handleButtonPress("RIGHT"),
                               onTapUp: (_) => handleButtonRelease(),
@@ -332,14 +340,8 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             GestureDetector(
-                              onTapDown: (_) {
-                                // 버튼을 누를 때 hornState가 1인 메시지 전송
-                                sendHornCommand(1); // hornState: 1
-                              },
-                              onTapUp: (_) {
-                                // 버튼을 뗄 때 hornState가 0인 메시지 전송
-                                sendHornCommand(0); // hornState: 0
-                              },
+                              onTapDown: (_) => sendHornCommand(1),
+                              onTapUp: (_) => sendHornCommand(0),
                               child: Container(
                                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
                                 decoration: BoxDecoration(
@@ -352,6 +354,32 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
                                     color: Color(0xFF9DA6B6),
                                     fontSize: 16,
                                   ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 20),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: toggleAutoLightMode,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: autoLightEnabled
+                                    ? Colors.green
+                                    : Colors.grey,
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 15),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
+                                autoLightEnabled ? "AutoLight ON" : "AutoLight OFF",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
                                 ),
                               ),
                             ),
