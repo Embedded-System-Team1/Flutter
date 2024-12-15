@@ -165,16 +165,16 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
     }
 
     // Reset speed and start increasing
-    currentSpeed = 10; // Initial speed
+    currentSpeed = 400; // Initial speed
     speedTimer?.cancel(); // Cancel any existing timer
     speedTimer = Timer.periodic(Duration(milliseconds: 100), (timer) {
-      if (currentSpeed < 100) {
+      if (currentSpeed < 1000) {
         currentSpeed += 10; // Increment speed
-        if (currentSpeed > 100) {
-          currentSpeed = 100; // Cap at 100
-        }
-        sendJsonData(0, currentSpeed, directionX, directionY);
       }
+      if (currentSpeed > 1000) {
+        currentSpeed = 1000; // Cap at 1000
+      }
+      sendJsonData(0, currentSpeed, directionX, directionY);
     });
   }
 
