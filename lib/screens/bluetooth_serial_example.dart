@@ -142,46 +142,93 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
     }
   }
 
-  void handleButtonPress(String direction) {
-    int directionX = 0;
-    int directionY = 0;
+// 방향 상태 변수
+  int directionX = 0; // -1: LEFT, 1: RIGHT, 0: NO MOVE
+  int directionY = 0; // -1: BACKWARD, 1: FORWARD, 0: NO MOVE
+  bool isUpPressed = false; // UP 버튼 상태
 
-    switch (direction) {
-      case "UP":
-        directionY = 1; // Forward
-        break;
-      case "DOWN":
-        directionY = -1; // Backward
-        break;
-      case "LEFT":
-        directionX = -1; // Left
-        break;
-      case "RIGHT":
-        directionX = 1; // Right
-        break;
-      default:
-        directionX = 0;
-        directionY = 0; // STOP or undefined
+// 속도 조정 로직
+  void updateSpeedAndDirection() {
+    if (isUpPressed) {
+      // UP 버튼이 눌린 상태: 속도 증가
+      if (currentSpeed == 0) {
+        currentSpeed = 400; // 초기 속도 설정
+      }
+      speedTimer?.cancel();
+      speedTimer = Timer.periodic(Duration(milliseconds: 100), (timer) {
+        if (currentSpeed < 1000) {
+          currentSpeed += 10;
+          if (currentSpeed > 1000) {
+            currentSpeed = 1000;
+          }
+        }
+        sendJsonData(0, currentSpeed, 0, 0); // directionX, directionY는 0
+      });
+    } else if (directionX != 0 || directionY != 0) {
+      // 다른 방향 버튼이 눌린 경우
+      if (currentSpeed == 0) {
+        currentSpeed = 400; // 초기 속도 설정
+      }
+      speedTimer?.cancel();
+      speedTimer = Timer.periodic(Duration(milliseconds: 100), (timer) {
+        if (currentSpeed < 1000) {
+          currentSpeed += 10;
+          if (currentSpeed > 1000) {
+            currentSpeed = 1000;
+          }
+        }
+        sendJsonData(0, currentSpeed, directionX, directionY);
+      });
+    } else {
+      // 버튼이 모두 떼어진 경우: 정지 상태
+      speedTimer?.cancel();
+      currentSpeed = 0;
+      sendJsonData(0, currentSpeed, 0, 0); // STOP
     }
-
-    // Reset speed and start increasing
-    currentSpeed = 400; // Initial speed
-    speedTimer?.cancel(); // Cancel any existing timer
-    speedTimer = Timer.periodic(Duration(milliseconds: 100), (timer) {
-      if (currentSpeed < 1000) {
-        currentSpeed += 10; // Increment speed
-      }
-      if (currentSpeed > 1000) {
-        currentSpeed = 1000; // Cap at 1000
-      }
-      sendJsonData(0, currentSpeed, directionX, directionY);
-    });
   }
 
-  void handleButtonRelease() {
-    speedTimer?.cancel(); // Stop increasing speed
-    currentSpeed = 0; // Reset speed
-    sendJsonData(0, 0, 0, 0); // Send STOP command
+// 버튼 눌림 상태 처리
+  void handleButtonPress(String direction) {
+    switch (direction) {
+      case "UP":
+        isUpPressed = true; // UP 버튼 눌림 상태
+        directionX = 0;
+        directionY = 0;
+        break;
+      case "DOWN":
+        directionY = 1; // BACKWARD
+        break;
+      case "LEFT":
+        directionX = -1; // LEFT
+        break;
+      case "RIGHT":
+        directionX = 1; // RIGHT
+        break;
+      default:
+        break;
+    }
+    updateSpeedAndDirection();
+  }
+
+// 버튼 떼기 상태 처리
+  void handleButtonRelease(String direction) {
+    switch (direction) {
+      case "UP":
+        isUpPressed = false; // UP 버튼 떼짐 상태
+        break;
+      case "DOWN":
+        directionY = 0; // STOP VERTICAL MOVEMENT
+        break;
+      case "LEFT":
+        directionX = 0; // STOP HORIZONTAL MOVEMENT
+        break;
+      case "RIGHT":
+        directionX = 0; // STOP HORIZONTAL MOVEMENT
+        break;
+      default:
+        break;
+    }
+    updateSpeedAndDirection();
   }
 
   @override
@@ -255,7 +302,7 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
                           children: [
                             GestureDetector(
                               onTapDown: (_) => handleButtonPress("UP"),
-                              onTapUp: (_) => handleButtonRelease(),
+                              onTapUp: (_) => handleButtonRelease("UP"),
                               child: Container(
                                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 20),
                                 decoration: BoxDecoration(
@@ -279,7 +326,7 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
                           children: [
                             GestureDetector(
                               onTapDown: (_) => handleButtonPress("LEFT"),
-                              onTapUp: (_) => handleButtonRelease(),
+                              onTapUp: (_) => handleButtonRelease("LEFT"),
                               child: Container(
                                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 20),
                                 decoration: BoxDecoration(
@@ -298,7 +345,7 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
                             SizedBox(width: 10),
                             GestureDetector(
                               onTapDown: (_) => handleButtonPress("DOWN"),
-                              onTapUp: (_) => handleButtonRelease(),
+                              onTapUp: (_) => handleButtonRelease("DOWN"),
                               child: Container(
                                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 20),
                                 decoration: BoxDecoration(
@@ -317,7 +364,7 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
                             SizedBox(width: 10),
                             GestureDetector(
                               onTapDown: (_) => handleButtonPress("RIGHT"),
-                              onTapUp: (_) => handleButtonRelease(),
+                              onTapUp: (_) => handleButtonRelease("RIGHT"),
                               child: Container(
                                 padding: EdgeInsets.symmetric(horizontal: 30, vertical: 20),
                                 decoration: BoxDecoration(
