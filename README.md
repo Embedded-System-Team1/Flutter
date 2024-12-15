@@ -1,16 +1,86 @@
-# embedded_rccar
+# RC 카 컨트롤러
+Flutter로 제작된 모바일 애플리케이션으로, Bluetooth를 통해 RC 카를 조종할 수 있습니다. 
+<br>
+이 앱은 RC 카의 움직임, 경적, 오토라이트, 천장 서보 등의 기능을 제공합니다.
 
-A new Flutter project.
+---
 
-## Getting Started
+## 주요 기능
 
-This project is a starting point for a Flutter application.
+- **방향 조작**: RC 카를 전진, 후진, 좌회전, 우회전으로 조종하며 부드러운 속도 조정이 가능합니다.
+- **경적**: 버튼을 눌러 경적을 켜고 끌 수 있습니다.
+- **오토라이트**: 주변 밝기를 감지하여 자동으로 라이트를 제어합니다.
+- **천장 서보**: 버튼 하나로 RC 카의 천장을 열고 닫을 수 있습니다.
 
-A few resources to get you started if this is your first Flutter project:
+---
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## JSON 명령 구조
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+앱은 Bluetooth를 통해 RC 카로 JSON 형식의 명령을 전송합니다. 아래는 각 기능에 대한 JSON 명령 구조입니다.
+
+### 움직임
+```json
+{
+  "id": 0,
+  "speed": 400,
+  "directionX": 0,
+  "directionY": 1
+}
+```
+
+- id: 0 (움직임 제어)
+- speed: 속도 (400~1000)
+- directionX: 수평 방향 (-1: 좌측, 0: 직진, 1: 우측)
+- directionY: 수직 방향 (-1: 후진, 0: 전진, 정지)
+
+### 경적
+```json
+{
+  "id": 1,
+  "hornState": 1
+}
+```
+
+- id: 1 (경적 제어)
+- hornState: 1 (ON), 0 (OFF)
+
+
+### 오토라이트
+
+```json
+{
+  "id": 2,
+  "mode": 1
+}
+```
+- id: 2 (오토라이트 제어)
+- mode: 1 (ON), 0 (OFF)
+
+
+### 천장 서보
+```json
+{
+  "id": 3,
+  "ceilingStatus": 1
+}
+```
+- id: 3 (천장 서보 제어)
+- ceilingStatus: 1 (열림), 0 (닫힘)
+
+---
+
+## 사용 방법
+### RC 카와 페어링:
+
+스마트폰에서 Bluetooth를 활성화합니다.
+앱에서 RC 카를 검색하고 페어링합니다.
+
+### RC 카 조종:
+방향 버튼을 사용해 전진, 후진, 좌회전, 우회전을 수행합니다.
+경적 버튼을 눌러 경적을 켜고 끕니다.
+
+### 오토라이트 활성화:
+오토라이트 버튼을 눌러 자동 라이트 조정을 활성화 또는 비활성화합니다.
+
+### 천장 서보 제어:
+천장 서보 버튼을 눌러 RC 카의 천장을 열거나 닫습니다.
