@@ -146,6 +146,28 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
   int directionX = 0; // -1: LEFT, 1: RIGHT, 0: NO MOVE
   int directionY = 0; // -1: BACKWARD, 1: FORWARD, 0: NO MOVE
   bool isUpPressed = false; // UP 버튼 상태
+  bool isCeilingOpen = false;
+
+// 뚜껑 상태를 변경하고 JSON 데이터 전송
+  void toggleCeiling() {
+    isCeilingOpen = !isCeilingOpen; // 상태 변경
+    final int ceilingStatus = isCeilingOpen ? 1 : 0; // 1: 열림, 0: 닫힘
+
+    // JSON 데이터 전송
+    if (connection != null && connection!.isConnected) {
+      final jsonData = jsonEncode({
+        "id": 3, // Ceiling Servo ID
+        "ceilingStatus": ceilingStatus, // 열림 상태
+      });
+
+      connection?.output.add(utf8.encode("$jsonData\n")); // JSON 데이터 전송
+      connection?.output.allSent.then((_) {
+        print("Sent Ceiling Command: $jsonData");
+      });
+    } else {
+      print("No active connection to send data");
+    }
+  }
 
 // 속도 조정 로직
   void updateSpeedAndDirection() {
@@ -426,6 +448,28 @@ class _BluetoothClassicExampleState extends State<BluetoothClassicExample> {
                                 autoLightEnabled ? "AutoLight ON" : "AutoLight OFF",
                                 style: TextStyle(
                                   color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton(
+                              onPressed: toggleCeiling,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: isCeilingOpen ? Color(0xFF52B47A) : Color(0xFF2E3646),
+                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
+                                isCeilingOpen ? "Close Ceiling" : "Open Ceiling",
+                                style: TextStyle(
+                                  color: Color(0xFF9DA6B6),
                                   fontSize: 16,
                                 ),
                               ),
